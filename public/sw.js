@@ -3,7 +3,7 @@
  * True Offline-First Application Shell and Asset Caching Strategy
  */
 
-const CACHE_VERSION = 'flocus-v1.0.0';
+const CACHE_VERSION = 'flocus-v1.0.1';
 const SHELL_CACHE = `flocus-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `flocus-runtime-${CACHE_VERSION}`;
 
@@ -15,11 +15,25 @@ const PRECACHE_URLS = [
   '/icon-512.svg',
 ];
 
-// Install Event: Pre-cache core application shell
+// Install Event: Pre-cache core application shell and discover runtime bundles
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
+    caches.open(SHELL_CACHE).then(async (cache) => {
+      await cache.addAll(PRECACHE_URLS);
+      try {
+        const indexRes = await fetch('/index.html');
+        if (indexRes.ok) {
+          const text = await indexRes.text();
+          const matches = [...text.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)];
+          for (const match of matches) {
+            try {
+              await cache.add(match[1]);
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        // Fallback to runtime caching if dynamic fetch fails during install
+      }
     }).then(() => {
       return self.skipWaiting();
     })
@@ -61,8 +75,14 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          return caches.match('/index.html') || caches.match('/');
+        .catch(async () => {
+          const cachedReq = await caches.match(request);
+          if (cachedReq) return cachedReq;
+          const cachedIndex = await caches.match('/index.html');
+          if (cachedIndex) return cachedIndex;
+          const cachedRoot = await caches.match('/');
+          if (cachedRoot) return cachedRoot;
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
         })
     );
     return;
@@ -85,16 +105,20 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        return fetch(request).then((networkResponse) => {
-          if (!networkResponse || networkResponse.status !== 200) {
+        return fetch(request)
+          .then((networkResponse) => {
+            if (!networkResponse || networkResponse.status !== 200) {
+              return networkResponse;
+            }
+            const responseToCache = networkResponse.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+            });
             return networkResponse;
-          }
-          const responseToCache = networkResponse.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseToCache);
+          })
+          .catch(() => {
+            return new Response('', { status: 404, statusText: 'Not Found' });
           });
-          return networkResponse;
-        });
       })
     );
     return;
