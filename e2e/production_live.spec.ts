@@ -179,4 +179,106 @@ test.describe('Production Live Website Smoke Verification Suite', () => {
       await page.waitForTimeout(500);
     }
   });
+
+  test('8. Flip clock 3D mechanical display and countdown on live production site', async ({ page }) => {
+    await page.goto(LIVE_URL);
+    await expect(page.locator('text=25:00')).toBeVisible({ timeout: 15000 });
+
+    // Toggle timer style to Flip
+    const styleToggleBtn = page.getByLabel('Toggle timer display style');
+    await expect(styleToggleBtn).toBeVisible();
+    await styleToggleBtn.click();
+
+    // Verify 3D flip clock display rendered
+    const flipDisplay = page.getByTestId('flip-clock-display');
+    await expect(flipDisplay).toBeVisible();
+
+    // Verify split-flap top/bottom halves and hinge lines
+    await expect(page.locator('.flip-card-top')).toHaveCount(4);
+    await expect(page.locator('.flip-card-bottom')).toHaveCount(4);
+    await expect(page.locator('.flip-hinge-line')).toHaveCount(4);
+
+    // Verify initial 25:00 digits
+    const digits = page.getByTestId('flip-digit-card');
+    await expect(digits.nth(0)).toHaveAttribute('data-digit', '2');
+    await expect(digits.nth(1)).toHaveAttribute('data-digit', '5');
+    await expect(digits.nth(2)).toHaveAttribute('data-digit', '0');
+    await expect(digits.nth(3)).toHaveAttribute('data-digit', '0');
+
+    // Start timer and observe ticking
+    const startBtn = page.getByRole('button', { name: /start (focus|timer)/i });
+    await startBtn.click();
+    await page.waitForTimeout(1400);
+
+    const pauseBtn = page.getByRole('button', { name: /pause timer/i });
+    await pauseBtn.click();
+  });
+
+  test('9. Forest Birds procedural soundscape and chime on live production site', async ({ page }) => {
+    await page.goto(LIVE_URL);
+
+    const soundsBtn = page.getByLabel('Open Sounds');
+    await soundsBtn.click();
+
+    const mixerModal = page.getByRole('heading', { name: 'Procedural Soundscapes' });
+    await expect(mixerModal).toBeVisible();
+
+    // Toggle Forest Birds
+    const birdsToggle = page.getByLabel('Toggle Forest Birds');
+    await expect(birdsToggle).toBeVisible();
+    await birdsToggle.click();
+
+    // Trigger test chime
+    const chimeBtn = page.getByRole('button', { name: /chime/i });
+    await expect(chimeBtn).toBeVisible();
+    await chimeBtn.click();
+
+    // Close mixer
+    await page.getByLabel('Close mixer').click();
+    await expect(mixerModal).not.toBeVisible();
+  });
+
+  test('10. Dynamic theme switching and CSS custom property injection on live production site', async ({ page }) => {
+    await page.goto(LIVE_URL);
+
+    // Verify default theme
+    let currentTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    expect(currentTheme).toBe('twilight-glow');
+
+    // Open Settings
+    await page.getByLabel('Open Settings').click();
+    await expect(page.getByRole('heading', { name: 'Settings & Preferences' })).toBeVisible();
+
+    // Switch to Emerald Forest
+    const emeraldBtn = page.getByRole('button', { name: /Emerald Forest/i });
+    await expect(emeraldBtn).toBeVisible();
+    await emeraldBtn.click();
+
+    currentTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    expect(currentTheme).toBe('deep-forest');
+
+    let primary = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim()
+    );
+    expect(primary).toBe('#10b981');
+
+    // Switch to Obsidian Violet
+    const obsidianBtn = page.getByRole('button', { name: /Obsidian Violet/i });
+    await obsidianBtn.click();
+
+    currentTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    expect(currentTheme).toBe('cyber-focus');
+
+    primary = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim()
+    );
+    expect(primary).toBe('#ec4899');
+
+    // Close settings and reload to verify persistence
+    await page.getByLabel('Close settings').click();
+    await page.reload();
+
+    const persistedTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    expect(persistedTheme).toBe('cyber-focus');
+  });
 });
