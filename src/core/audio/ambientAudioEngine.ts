@@ -4,17 +4,23 @@ import {
   playHarmonicChime,
   startBrownNoiseSound,
   startCampfireSound,
+  startForestBirdsSound,
   startOceanWavesSound,
+  startPinkNoiseSound,
   startRainSound,
+  startWhiteNoiseSound,
   startWindSound,
 } from './proceduralGenerators';
 
 export const DEFAULT_SOUND_CHANNELS: SoundChannel[] = [
-  { id: 'rain', name: 'Gentle Rain', category: 'nature', volume: 0.6, active: false, iconName: 'CloudRain' },
-  { id: 'waves', name: 'Ocean Waves', category: 'nature', volume: 0.5, active: false, iconName: 'Waves' },
-  { id: 'wind', name: 'Forest Breeze', category: 'nature', volume: 0.4, active: false, iconName: 'Wind' },
-  { id: 'fire', name: 'Cozy Hearth', category: 'cozy', volume: 0.5, active: false, iconName: 'Flame' },
-  { id: 'brown_noise', name: 'Deep Brown Noise', category: 'noise', volume: 0.5, active: false, iconName: 'AudioWaveform' },
+  { id: 'rain', name: 'Gentle Rain', category: 'nature', volume: 0.7, active: false, iconName: 'CloudRain' },
+  { id: 'waves', name: 'Ocean Waves', category: 'nature', volume: 0.65, active: false, iconName: 'Waves' },
+  { id: 'birds', name: 'Forest Birds', category: 'nature', volume: 0.6, active: false, iconName: 'Feather' },
+  { id: 'wind', name: 'Forest Breeze', category: 'nature', volume: 0.5, active: false, iconName: 'Wind' },
+  { id: 'fire', name: 'Cozy Hearth', category: 'cozy', volume: 0.55, active: false, iconName: 'Flame' },
+  { id: 'brown_noise', name: 'Deep Brown Noise', category: 'noise', volume: 0.6, active: false, iconName: 'AudioWaveform' },
+  { id: 'pink_noise', name: 'Calm Pink Noise', category: 'noise', volume: 0.55, active: false, iconName: 'AudioWaveform' },
+  { id: 'white_noise', name: 'Pure White Noise', category: 'noise', volume: 0.5, active: false, iconName: 'AudioWaveform' },
 ];
 
 export class AmbientAudioEngine {
@@ -32,19 +38,36 @@ export class AmbientAudioEngine {
     isMuted = false,
     onStateChange?: (channels: SoundChannel[], masterVolume: number, isMuted: boolean) => void
   ) {
-    this.channels = initialChannels ? [...initialChannels] : [...DEFAULT_SOUND_CHANNELS];
+    if (initialChannels && initialChannels.length > 0) {
+      // Merge with default channels to preserve any missing new channels
+      const channelMap = new Map<string, SoundChannel>();
+      DEFAULT_SOUND_CHANNELS.forEach((def) => channelMap.set(def.id, { ...def }));
+      initialChannels.forEach((saved) => {
+        if (channelMap.has(saved.id)) {
+          channelMap.set(saved.id, { ...channelMap.get(saved.id)!, ...saved });
+        } else {
+          channelMap.set(saved.id, { ...saved });
+        }
+      });
+      this.channels = Array.from(channelMap.values());
+    } else {
+      this.channels = DEFAULT_SOUND_CHANNELS.map((ch) => ({ ...ch }));
+    }
+
     this.masterVolume = masterVolume;
     this.isMuted = isMuted;
     this.onStateChange = onStateChange;
   }
 
-  private initAudioContext(): AudioContext {
+  public initAudioContext(): AudioContext {
     if (!this.ctx && typeof window !== 'undefined') {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioContextClass) {
         this.ctx = new AudioContextClass();
         this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+        this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.masterVolume, this.ctx.currentTime);
         this.masterGain.connect(this.ctx.destination);
       }
     }
@@ -52,6 +75,25 @@ export class AmbientAudioEngine {
       this.ctx.resume().catch(() => {});
     }
     return this.ctx!;
+  }
+
+  public async resumeAudioContext(): Promise<void> {
+    const ctx = this.initAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
+  }
+
+  public getAudioContext(): AudioContext | null {
+    return this.ctx;
+  }
+
+  public getMasterGainNode(): GainNode | null {
+    return this.masterGain;
+  }
+
+  public getActiveInstances(): Map<string, ProceduralChannelInstance> {
+    return this.activeInstances;
   }
 
   public getChannels(): SoundChannel[] {
@@ -84,9 +126,13 @@ export class AmbientAudioEngine {
     return this.isMuted;
   }
 
-  public toggleChannel(channelId: string): void {
+  public toggleChannel(channelId: string): boolean {
     const channel = this.channels.find((c) => c.id === channelId);
-    if (!channel) return;
+    if (!channel) return false;
+
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch((err) => console.warn('AudioContext resume error:', err));
+    }
 
     channel.active = !channel.active;
 
@@ -97,6 +143,7 @@ export class AmbientAudioEngine {
     }
 
     this.notifyState();
+    return channel.active;
   }
 
   public setChannelVolume(channelId: string, volume: number): void {
@@ -129,6 +176,9 @@ export class AmbientAudioEngine {
       case 'waves':
         instance = startOceanWavesSound(ctx, this.masterGain);
         break;
+      case 'birds':
+        instance = startForestBirdsSound(ctx, this.masterGain);
+        break;
       case 'wind':
         instance = startWindSound(ctx, this.masterGain);
         break;
@@ -137,6 +187,12 @@ export class AmbientAudioEngine {
         break;
       case 'brown_noise':
         instance = startBrownNoiseSound(ctx, this.masterGain);
+        break;
+      case 'pink_noise':
+        instance = startPinkNoiseSound(ctx, this.masterGain);
+        break;
+      case 'white_noise':
+        instance = startWhiteNoiseSound(ctx, this.masterGain);
         break;
     }
 

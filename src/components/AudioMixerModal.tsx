@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Volume2, VolumeX, CloudRain, Waves, Wind, Flame, AudioWaveform, BellRing } from 'lucide-react';
+import { X, Volume2, VolumeX, CloudRain, Waves, Wind, Flame, AudioWaveform, BellRing, Feather } from 'lucide-react';
 import { SoundChannel } from '../types';
 
 interface AudioMixerModalProps {
@@ -21,6 +21,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   Wind,
   Flame,
   AudioWaveform,
+  Feather,
 };
 
 export const AudioMixerModal: React.FC<AudioMixerModalProps> = ({

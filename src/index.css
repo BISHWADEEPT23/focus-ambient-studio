@@ -4,6 +4,14 @@
 
 :root {
   color-scheme: dark;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --theme-surface: #0d0b18;
+  --theme-border: rgba(139, 92, 246, 0.25);
+  --theme-accent: #a78bfa;
+  --theme-particle: rgba(167, 139, 250, 0.65);
 }
 
 body {
@@ -36,13 +44,72 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* 3D Flip Card Styles */
-.flip-card-container {
-  perspective: 600px;
+/* 3D Flip Clock Mechanics */
+.flip-card-perspective {
+  perspective: 450px;
+  -webkit-perspective: 450px;
 }
 
-.flip-card {
-  position: relative;
+.flip-card-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flip-card-top {
+  top: 0;
+  bottom: 50%;
+  align-items: flex-end;
+  border-top-left-radius: 0.65rem;
+  border-top-right-radius: 0.65rem;
+  transform-origin: bottom center;
+}
+
+.flip-card-bottom {
+  top: 50%;
+  bottom: 0;
+  align-items: flex-start;
+  border-bottom-left-radius: 0.65rem;
+  border-bottom-right-radius: 0.65rem;
+  transform-origin: top center;
+}
+
+/* Realistic downward split-flap keyframes */
+@keyframes flipFoldDownTop {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes flipUnfoldDownBottom {
+  0% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.animate-flip-top {
+  animation: flipFoldDownTop 0.28s cubic-bezier(0.4, 0, 0.7, 1) forwards;
+}
+
+.animate-flip-bottom {
+  animation: flipUnfoldDownBottom 0.28s cubic-bezier(0.15, 0, 0.4, 1) 0.26s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-flip-top,
+  .animate-flip-bottom {
+    animation: none !important;
+  }
 }

@@ -3,9 +3,16 @@ import React, { useEffect, useRef } from 'react';
 interface AmbientCanvasProps {
   sceneType?: 'stars' | 'aurora' | 'rain' | 'forest' | 'particles';
   reducedMotion?: boolean;
+  particleColor?: string;
+  accentColor?: string;
 }
 
-export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'aurora', reducedMotion = false }) => {
+export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({
+  sceneType = 'aurora',
+  reducedMotion = false,
+  particleColor,
+  accentColor,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -45,8 +52,9 @@ export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'auror
       t += 0.01;
       ctx.clearRect(0, 0, width, height);
 
-      if (sceneType === 'aurora') {
-        // Subtle moving gradient orbs
+      if (sceneType === 'aurora' || sceneType === 'forest') {
+        // Subtle moving gradient orbs reacting to theme
+        const glowColor = accentColor || 'rgba(124, 58, 237, 0.18)';
         const grad1 = ctx.createRadialGradient(
           width * 0.3 + Math.sin(t * 0.5) * 120,
           height * 0.4 + Math.cos(t * 0.3) * 80,
@@ -55,8 +63,8 @@ export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'auror
           height * 0.4,
           width * 0.45
         );
-        grad1.addColorStop(0, 'rgba(124, 58, 237, 0.18)');
-        grad1.addColorStop(1, 'rgba(124, 58, 237, 0)');
+        grad1.addColorStop(0, glowColor);
+        grad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = grad1;
         ctx.fillRect(0, 0, width, height);
 
@@ -68,8 +76,8 @@ export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'auror
           height * 0.6,
           width * 0.5
         );
-        grad2.addColorStop(0, 'rgba(56, 189, 248, 0.12)');
-        grad2.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        grad2.addColorStop(0, particleColor || 'rgba(56, 189, 248, 0.12)');
+        grad2.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = grad2;
         ctx.fillRect(0, 0, width, height);
       }
@@ -101,7 +109,9 @@ export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'auror
 
           ctx.fillStyle = sceneType === 'stars' 
             ? `rgba(255, 255, 255, ${p.alpha})`
-            : `rgba(167, 139, 250, ${p.alpha * 0.6})`;
+            : particleColor
+              ? particleColor
+              : `rgba(167, 139, 250, ${p.alpha * 0.6})`;
 
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -118,7 +128,7 @@ export const AmbientCanvas: React.FC<AmbientCanvasProps> = ({ sceneType = 'auror
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
     };
-  }, [sceneType, reducedMotion]);
+  }, [sceneType, reducedMotion, particleColor, accentColor]);
 
   if (reducedMotion) return null;
 

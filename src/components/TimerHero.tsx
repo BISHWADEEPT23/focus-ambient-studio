@@ -7,6 +7,7 @@ interface TimerHeroProps {
   timerState: TimerState;
   timerStyle: TimerStyle;
   activeTask?: TaskItem;
+  reducedMotion?: boolean;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -19,6 +20,7 @@ export const TimerHero: React.FC<TimerHeroProps> = ({
   timerState,
   timerStyle,
   activeTask,
+  reducedMotion = false,
   onStart,
   onPause,
   onReset,
@@ -66,16 +68,16 @@ export const TimerHero: React.FC<TimerHeroProps> = ({
       {/* Main Display: Digital or Flip */}
       <div className="my-4 flex items-center justify-center">
         {timerStyle === 'flip' ? (
-          <div className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-5" data-testid="flip-clock-display">
             {hours > 0 && (
               <>
-                <FlipCard digit={hours} label="Hours" />
-                <span className="text-3xl md:text-5xl font-mono text-neutral-600 font-bold mb-4">:</span>
+                <FlipCard digit={hours} label="Hours" reducedMotion={reducedMotion} />
+                <span className="text-2xl sm:text-3xl md:text-5xl font-mono text-neutral-600 font-bold mb-4">:</span>
               </>
             )}
-            <FlipCard digit={minutes} label="Minutes" />
-            <span className="text-3xl md:text-5xl font-mono text-neutral-600 font-bold mb-4">:</span>
-            <FlipCard digit={seconds} label="Seconds" />
+            <FlipCard digit={minutes} label="Minutes" reducedMotion={reducedMotion} />
+            <span className="text-2xl sm:text-3xl md:text-5xl font-mono text-neutral-600 font-bold mb-4">:</span>
+            <FlipCard digit={seconds} label="Seconds" reducedMotion={reducedMotion} />
           </div>
         ) : (
           <div className="text-7xl md:text-9xl font-mono font-bold tracking-tighter text-white drop-shadow-2xl select-none">

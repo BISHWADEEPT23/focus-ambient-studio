@@ -41,6 +41,17 @@ export interface SoundChannel {
   iconName: string;
 }
 
+export interface ThemePalette {
+  primary: string;
+  primaryHover: string;
+  primaryMuted: string;
+  accent: string;
+  surface: string;
+  surfaceBorder: string;
+  bgGradient: string;
+  particleColor: string;
+}
+
 export interface ThemeConfig {
   id: string;
   name: string;
@@ -48,6 +59,7 @@ export interface ThemeConfig {
   overlayOpacity: number; // 0.0 to 0.9
   blurAmount: number; // 0 to 20 px
   sceneType?: 'stars' | 'aurora' | 'rain' | 'forest' | 'particles';
+  palette?: ThemePalette;
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';

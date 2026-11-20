@@ -122,14 +122,18 @@ export const App: React.FC = () => {
       settings.masterVolume,
       settings.muted,
       (channels, vol, muted) => {
-        setSoundChannels(channels);
+        setSoundChannels([...channels]);
         setMasterVolume(vol);
         setIsMuted(muted);
-        globalStorage.debouncedSave(keys.SETTINGS, {
-          ...settings,
-          soundChannels: channels,
-          masterVolume: vol,
-          muted,
+        setSettings((prev) => {
+          const updated = {
+            ...prev,
+            soundChannels: channels,
+            masterVolume: vol,
+            muted,
+          };
+          globalStorage.debouncedSave(keys.SETTINGS, updated);
+          return updated;
         });
       }
     );
@@ -139,6 +143,7 @@ export const App: React.FC = () => {
     // 4. Theme Engine
     const themeEngine = new ThemeEngine(settings.theme);
     themeEngineRef.current = themeEngine;
+    themeEngine.applyToDocument(settings.theme);
 
     // 5. Timer Engine
     const timerEngine = new TimerEngine(settings.timerConfig, {
@@ -273,6 +278,10 @@ export const App: React.FC = () => {
     return tasks.filter((t) => !t.completed).length;
   }, [tasks]);
 
+  const currentPalette = useMemo(() => {
+    return themeEngineRef.current?.getPalette(settings.theme.id);
+  }, [settings.theme.id]);
+
   const backgroundStyle = useMemo(() => {
     return themeEngineRef.current?.getBackgroundStyle() || { background: '#07070b' };
   }, [settings.theme.id]);
@@ -286,6 +295,8 @@ export const App: React.FC = () => {
       <AmbientCanvas
         sceneType={settings.theme.sceneType}
         reducedMotion={settings.reducedMotion}
+        particleColor={currentPalette?.particleColor}
+        accentColor={currentPalette?.accent}
       />
 
       {/* Background Dimming Opacity Overlay */}
@@ -310,6 +321,7 @@ export const App: React.FC = () => {
             timerState={timerState}
             timerStyle={settings.timerStyle}
             activeTask={activeFocusTask}
+            reducedMotion={settings.reducedMotion}
             onStart={() => timerEngineRef.current?.start()}
             onPause={() => timerEngineRef.current?.pause()}
             onReset={() => timerEngineRef.current?.reset()}
@@ -434,6 +446,7 @@ export const App: React.FC = () => {
             const updated = { ...prev, theme: th };
             globalStorage.saveLocalSync(keys.SETTINGS, updated);
             themeEngineRef.current?.setTheme(th.id);
+            themeEngineRef.current?.applyToDocument(th);
             return updated;
           });
         }}

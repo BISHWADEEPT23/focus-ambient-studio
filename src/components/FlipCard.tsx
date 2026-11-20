@@ -1,29 +1,27 @@
 import React from 'react';
+import { FlipDigit } from './FlipDigit';
 
 interface FlipCardProps {
-  digit: string | number;
+  digit?: string | number;
+  value?: string | number;
   label?: string;
+  reducedMotion?: boolean;
 }
 
-export const FlipCard: React.FC<FlipCardProps> = ({ digit, label }) => {
-  const formatted = String(digit).padStart(2, '0');
+export const FlipCard: React.FC<FlipCardProps> = ({ digit, value, label, reducedMotion = false }) => {
+  const raw = digit !== undefined ? digit : value;
+  const num = typeof raw === 'number' ? raw : parseInt(String(raw || 0), 10) || 0;
+  const tens = Math.floor(Math.abs(num) / 10) % 10;
+  const units = Math.abs(num) % 10;
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-20 h-28 md:w-28 md:h-36 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl flex items-center justify-center overflow-hidden">
-        {/* Top half shine */}
-        <div className="absolute top-0 inset-x-0 h-1/2 bg-white/[0.03] border-b border-black/40 z-10 pointer-events-none" />
-
-        {/* Center horizontal divider line */}
-        <div className="absolute inset-x-0 top-1/2 h-[2px] bg-neutral-950 z-20" />
-
-        {/* Big Digit */}
-        <span className="font-mono text-5xl md:text-7xl font-bold tracking-tight text-neutral-100 select-none">
-          {formatted}
-        </span>
+    <div className="flex flex-col items-center select-none" data-testid="flip-unit-group">
+      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+        <FlipDigit digit={tens} label={label ? `${label} tens` : undefined} reducedMotion={reducedMotion} />
+        <FlipDigit digit={units} label={label ? `${label} units` : undefined} reducedMotion={reducedMotion} />
       </div>
       {label && (
-        <span className="mt-2 text-xs uppercase tracking-widest text-neutral-400 font-medium">
+        <span className="mt-2 text-[10px] sm:text-xs uppercase tracking-widest text-neutral-400 font-medium">
           {label}
         </span>
       )}
