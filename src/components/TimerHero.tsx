@@ -39,6 +39,7 @@ export const TimerHero: React.FC<TimerHeroProps> = ({
     { id: 'pomodoro', label: 'Pomodoro' },
     { id: 'shortBreak', label: 'Short Break' },
     { id: 'longBreak', label: 'Long Break' },
+    { id: 'countdown', label: 'Countdown' },
     { id: 'stopwatch', label: 'Stopwatch' },
     { id: 'animedoro', label: 'Animedoro' },
   ];

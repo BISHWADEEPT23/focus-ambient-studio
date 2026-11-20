@@ -44,10 +44,16 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* 3D Flip Clock Split-Flap Geometry & Keyframes */
+/* 3D Flip Clock Split-Flap Geometry & Transitions */
 .flip-card-perspective {
   perspective: 1000px;
   -webkit-perspective: 1000px;
+}
+
+.flip-card-container {
+  background-color: var(--theme-surface, #0d0b18);
+  border-color: var(--theme-border, rgba(139, 92, 246, 0.25));
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 0 15px -3px var(--theme-border, rgba(139, 92, 246, 0.15));
 }
 
 .flip-card-half {
@@ -60,6 +66,7 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   will-change: transform;
 }
 
@@ -67,6 +74,9 @@ body {
   top: 0;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.85);
+  background-color: var(--theme-surface, #12101e);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.4));
   transform-origin: bottom center;
 }
 
@@ -74,6 +84,9 @@ body {
   bottom: 0;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
+  border-top: 1px solid rgba(0, 0, 0, 0.85);
+  background-color: var(--theme-surface, #090812);
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.7));
   transform-origin: top center;
 }
 
@@ -107,36 +120,83 @@ body {
   display: inline-block;
 }
 
-/* Realistic downward split-flap keyframes */
-@keyframes flipFoldDownTop {
-  0% {
-    transform: rotateX(0deg);
-  }
-  100% {
-    transform: rotateX(-90deg);
-  }
+.flip-digit-glyph-bottom {
+  color: #e4e4e7;
 }
 
-@keyframes flipUnfoldDownBottom {
-  0% {
-    transform: rotateX(90deg);
-  }
-  100% {
-    transform: rotateX(0deg);
-  }
+/* Single 3D Rotating Card Mechanism */
+.flip-rotating-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transform-origin: 50% 50% 0;
+  will-change: transform;
 }
 
+.flip-rotating-card.is-idle {
+  transform: rotateX(0deg);
+  -webkit-transform: rotateX(0deg);
+}
+
+.flip-rotating-card.is-flipping {
+  transition: transform 750ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  -webkit-transition: -webkit-transform 750ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: rotateX(-180deg);
+  -webkit-transform: rotateX(-180deg);
+}
+
+.flip-rotating-card.is-reset {
+  transition: none !important;
+  -webkit-transition: none !important;
+  transform: rotateX(0deg) !important;
+  -webkit-transform: rotateX(0deg) !important;
+}
+
+/* 3D Faces */
+.flip-face-front,
+.flip-face-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-face-front {
+  transform: rotateX(0deg);
+  -webkit-transform: rotateX(0deg);
+}
+
+.flip-face-back {
+  transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+}
+
+/* Hardware accelerated layer promotion to prevent Chromium z-fighting */
+.flip-face-front div,
+.flip-face-back div {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* Selector hooks for test harness compatibility */
 .animate-flip-top {
-  animation: flipFoldDownTop 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  /* Hook for test harnesses */
 }
 
 .animate-flip-bottom {
-  animation: flipUnfoldDownBottom 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.25s forwards;
+  /* Hook for test harnesses */
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-flip-top,
-  .animate-flip-bottom {
-    animation: none !important;
+  .flip-rotating-card.is-flipping {
+    transition: none !important;
+    transform: rotateX(0deg) !important;
   }
 }
