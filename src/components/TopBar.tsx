@@ -41,7 +41,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, showQuote = true
   };
 
   return (
-    <header className="relative z-20 flex items-center justify-between px-6 py-4 w-full">
+    <header className="relative z-20 flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 w-full max-w-7xl mx-auto select-none">
       {/* Greeting and Quote */}
       <div className="flex flex-col">
         <h1 className="text-sm font-semibold tracking-wide text-neutral-200">
