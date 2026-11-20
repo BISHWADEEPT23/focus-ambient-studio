@@ -1,18 +1,31 @@
 /**
  * Service Worker: Focus & Ambient Studio
  * True Offline-First Application Shell and Asset Caching Strategy
+ * Fully compatible with root and subpath deployments (GitHub Pages)
  */
 
-const CACHE_VERSION = 'flocus-v1.0.1';
+const CACHE_VERSION = 'flocus-v1.0.2';
 const SHELL_CACHE = `flocus-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `flocus-runtime-${CACHE_VERSION}`;
 
+// Compute base scope dynamically from registration
+function getScopePath() {
+  if (typeof self !== 'undefined' && self.registration && self.registration.scope) {
+    try {
+      const url = new URL(self.registration.scope);
+      return url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
+    } catch (_) {}
+  }
+  return '/';
+}
+
+const SCOPE_PATH = getScopePath();
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
+  SCOPE_PATH,
+  `${SCOPE_PATH}index.html`,
+  `${SCOPE_PATH}manifest.json`,
+  `${SCOPE_PATH}icon-192.svg`,
+  `${SCOPE_PATH}icon-512.svg`,
 ];
 
 // Install Event: Pre-cache core application shell and discover runtime bundles
@@ -21,13 +34,18 @@ self.addEventListener('install', (event) => {
     caches.open(SHELL_CACHE).then(async (cache) => {
       await cache.addAll(PRECACHE_URLS);
       try {
-        const indexRes = await fetch('/index.html');
+        const indexUrl = `${SCOPE_PATH}index.html`;
+        const indexRes = await fetch(indexUrl);
         if (indexRes.ok) {
           const text = await indexRes.text();
-          const matches = [...text.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)];
+          // Match any asset referenced in HTML
+          const matches = [...text.matchAll(/(?:src|href)="([^"]*assets\/[^"]+)"/g)];
           for (const match of matches) {
             try {
-              await cache.add(match[1]);
+              const assetUrl = match[1].startsWith('/')
+                ? match[1]
+                : `${SCOPE_PATH}${match[1].replace(/^\.\//, '')}`;
+              await cache.add(assetUrl);
             } catch (_) {}
           }
         }
@@ -64,7 +82,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Navigation requests: Network-first with cache fallback to /index.html
+  // 1. Navigation requests: Network-first with cache fallback to index.html
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -78,20 +96,22 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cachedReq = await caches.match(request);
           if (cachedReq) return cachedReq;
-          const cachedIndex = await caches.match('/index.html');
+          const cachedIndex = await caches.match(`${SCOPE_PATH}index.html`);
           if (cachedIndex) return cachedIndex;
-          const cachedRoot = await caches.match('/');
+          const cachedRoot = await caches.match(SCOPE_PATH);
           if (cachedRoot) return cachedRoot;
+          const fallbackAny = await caches.match('/index.html');
+          if (fallbackAny) return fallbackAny;
           return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
         })
     );
     return;
   }
 
-  // 2. Static Assets (/assets/*, .js, .css, .svg, .json, fonts): Cache-first with network fill
+  // 2. Static Assets: Cache-first with network fill
   const url = new URL(request.url);
   const isStaticAsset =
-    url.pathname.startsWith('/assets/') ||
+    url.pathname.includes('/assets/') ||
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css') ||
     url.pathname.endsWith('.svg') ||

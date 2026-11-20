@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Release Readiness End-to-End Audit Suite', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
   });
 
   test('1. Timer accuracy, pause/resume, and background-tab recovery simulation', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
 
     const startBtn = page.getByRole('button', { name: /start (focus|timer)/i });
     await expect(startBtn).toBeVisible();
@@ -52,7 +52,7 @@ test.describe('Release Readiness End-to-End Audit Suite', () => {
   });
 
   test('2. Audio controls: multi-channel toggling, volume adjustment, and master mute', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
 
     // Open Soundscapes Mixer
     const soundsBtn = page.getByRole('button', { name: /sounds/i });
@@ -94,7 +94,7 @@ test.describe('Release Readiness End-to-End Audit Suite', () => {
   });
 
   test('3. Task creation, completion toggle, and focus priority binding', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
 
     // Open Task Drawer
     const tasksBtn = page.getByLabel('Open Tasks');
@@ -121,7 +121,7 @@ test.describe('Release Readiness End-to-End Audit Suite', () => {
   });
 
   test('4. Settings updates and persistence across simulated reload', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('./');
 
     // Open Settings Modal
     const settingsBtn = page.getByLabel('Open Settings');
@@ -159,7 +159,7 @@ test.describe('Release Readiness End-to-End Audit Suite', () => {
   test('5. High-resolution screenshot capture for Release Readiness Audit', async ({ page }) => {
     // 5.1 Desktop Viewport (1920x1080)
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+    await page.goto('./');
     await page.waitForTimeout(600);
 
     // 1) desktop-focus.png

@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Offline-First & PWA Installation Verification Suite', () => {
   test('1. Validates Web App Manifest schema and installation criteria', async ({ page }) => {
-    const response = await page.goto('/manifest.json');
+    const response = await page.goto('./manifest.json');
     expect(response?.status()).toBe(200);
 
     const manifest = await response?.json();
     expect(manifest.name).toBe('Focus & Ambient Studio');
     expect(manifest.short_name).toBe('Flocus');
     expect(manifest.display).toBe('standalone');
-    expect(manifest.start_url).toBe('/');
+    expect(manifest.start_url === '/' || manifest.start_url === './').toBe(true);
     expect(manifest.background_color).toBe('#0a0a0a');
     expect(manifest.theme_color).toBe('#0a0a0a');
     expect(Array.isArray(manifest.icons)).toBe(true);
@@ -20,7 +20,7 @@ test.describe('Offline-First & PWA Installation Verification Suite', () => {
 
   test('2. Service Worker registration, activation, offline caching, and reload', async ({ page, context }) => {
     // 1. Load application online
-    await page.goto('/');
+    await page.goto('./');
     await expect(page.locator('text=25:00')).toBeVisible();
 
     // 2. Wait for Service Worker registration and activation

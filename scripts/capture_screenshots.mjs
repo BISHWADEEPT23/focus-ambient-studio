@@ -28,7 +28,7 @@ async function capture() {
   });
 
   try {
-    await waitForServer('http://localhost:4173');
+    await waitForServer('http://localhost:4173/focus-ambient-studio/');
     console.log('Preview server ready! Launching Chromium...');
 
     const browser = await chromium.launch({ headless: true });
@@ -37,7 +37,7 @@ async function capture() {
 
     // 1. Desktop Viewport (1920x1080)
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('http://localhost:4173');
+    await page.goto('http://localhost:4173/focus-ambient-studio/');
     await page.waitForTimeout(1000);
 
     console.log('Capturing desktop-focus.png...');

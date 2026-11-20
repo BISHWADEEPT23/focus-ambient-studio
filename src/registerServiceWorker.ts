@@ -8,9 +8,15 @@ export function registerServiceWorker(): Promise<ServiceWorkerRegistration | nul
     return Promise.resolve(null);
   }
 
-  // Register in production or when supported
+  // Determine dynamic base path for GitHub Pages and subpath deployment
+  const base = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  const swUrl = `${base}sw.js`;
+
+  // Register with scope matching the deployed base URL
   return navigator.serviceWorker
-    .register('/sw.js', { scope: '/' })
+    .register(swUrl, { scope: base })
     .then((registration) => {
       // Check for updates
       registration.onupdatefound = () => {

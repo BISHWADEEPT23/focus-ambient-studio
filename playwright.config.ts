@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 45000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:4173/focus-ambient-studio/',
     browserName: 'chromium',
     headless: true,
     screenshot: 'off',

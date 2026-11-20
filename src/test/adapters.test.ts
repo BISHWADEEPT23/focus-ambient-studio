@@ -661,7 +661,7 @@ describe('Cross-Platform Integration Adapters & Contracts Test Suite', () => {
       expect(manifest.name).toBe('Focus & Ambient Studio');
       expect(manifest.short_name).toBe('Flocus');
       expect(manifest.display).toBe('standalone');
-      expect(manifest.start_url).toBe('/');
+      expect(manifest.start_url === '/' || manifest.start_url === './').toBe(true);
       expect(manifest.background_color).toBe('#0a0a0a');
       expect(manifest.theme_color).toBe('#0a0a0a');
 
@@ -677,8 +677,8 @@ describe('Cross-Platform Integration Adapters & Contracts Test Suite', () => {
 
       const swContent = fs.readFileSync(swPath, 'utf-8');
       expect(swContent).toContain('PRECACHE_URLS');
-      expect(swContent).toContain('/index.html');
-      expect(swContent).toContain('/manifest.json');
+      expect(swContent).toContain('index.html');
+      expect(swContent).toContain('manifest.json');
       expect(swContent).toContain('caches.open');
       expect(swContent).toContain('self.skipWaiting()');
       expect(swContent).toContain('self.clients.claim()');
