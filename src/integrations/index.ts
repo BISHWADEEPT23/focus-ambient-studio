@@ -6,3 +6,4 @@
 export * from './StudyFlipTimerAdapter';
 export * from './PrepOSSyncService';
 export * from './contracts/DesktopBridge';
+export * from './contracts/BridgeSecurityValidator';

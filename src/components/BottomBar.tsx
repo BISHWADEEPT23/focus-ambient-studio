@@ -69,6 +69,7 @@ export const BottomBar: React.FC<BottomBarProps> = ({
 
           <button
             onClick={onOpenMixer}
+            aria-label="Open Sounds"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-neutral-300 hover:text-white hover:bg-white/10 transition-all"
             title="Open Soundscapes Mixer"
           >
@@ -82,6 +83,7 @@ export const BottomBar: React.FC<BottomBarProps> = ({
         {/* Task Drawer Trigger */}
         <button
           onClick={onOpenTasks}
+          aria-label="Open Tasks"
           className="relative flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-full text-xs font-medium text-neutral-300 hover:text-white transition-all shadow-xl active:scale-95"
           title="Open Task Manager (T)"
         >

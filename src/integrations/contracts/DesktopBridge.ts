@@ -5,6 +5,7 @@
  */
 
 import { IntegrationEventBus, integrationBus } from '../../core/contracts/integrationContracts';
+import { BridgeSecurityValidator } from './BridgeSecurityValidator';
 
 export type DesktopRuntimeEnvironment = 'tauri' | 'electron' | 'browser';
 
@@ -288,13 +289,15 @@ export class DesktopBridgeAdapter implements IDesktopBridge {
    */
   public async sendNotification(options: DesktopNotificationOptions): Promise<boolean> {
     const env = this.getEnvironment();
+    const safeTitle = BridgeSecurityValidator.sanitizeString(options.title, 128);
+    const safeBody = BridgeSecurityValidator.sanitizeString(options.body, 512);
 
     if (env === 'tauri') {
       const tauri = (window as any).__TAURI__;
       if (tauri?.notification?.sendNotification) {
         tauri.notification.sendNotification({
-          title: options.title,
-          body: options.body,
+          title: safeTitle,
+          body: safeBody,
           icon: options.icon,
         });
         return true;
@@ -302,7 +305,7 @@ export class DesktopBridgeAdapter implements IDesktopBridge {
     } else if (env === 'electron') {
       const electron = (window as any).electron || (window as any).ipcRenderer;
       if (electron?.send) {
-        electron.send('show-notification', options);
+        electron.send('show-notification', { ...options, title: safeTitle, body: safeBody });
         return true;
       }
     }
@@ -310,8 +313,8 @@ export class DesktopBridgeAdapter implements IDesktopBridge {
     // Standard HTML5 Notification API fallback
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
-        new Notification(options.title, {
-          body: options.body,
+        new Notification(safeTitle, {
+          body: safeBody,
           icon: options.icon,
           tag: options.tag,
           silent: options.silent,
@@ -320,8 +323,8 @@ export class DesktopBridgeAdapter implements IDesktopBridge {
       } else if (Notification.permission !== 'denied') {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          new Notification(options.title, {
-            body: options.body,
+          new Notification(safeTitle, {
+            body: safeBody,
             icon: options.icon,
             tag: options.tag,
             silent: options.silent,
@@ -338,19 +341,24 @@ export class DesktopBridgeAdapter implements IDesktopBridge {
    * Updates desktop system tray configuration
    */
   public async updateTray(config: TrayConfig): Promise<boolean> {
-    this.activeTrayConfig = { ...this.activeTrayConfig, ...config };
+    const safeConfig: TrayConfig = {
+      ...config,
+      title: config.title ? BridgeSecurityValidator.sanitizeString(config.title, 64) : undefined,
+      tooltip: config.tooltip ? BridgeSecurityValidator.sanitizeString(config.tooltip, 128) : undefined,
+    };
+    this.activeTrayConfig = { ...this.activeTrayConfig, ...safeConfig };
     const env = this.getEnvironment();
 
     if (env === 'tauri') {
       const tauri = (window as any).__TAURI__;
-      if (tauri?.tray?.setTooltip && config.tooltip) {
-        await tauri.tray.setTooltip(config.tooltip);
+      if (tauri?.tray?.setTooltip && safeConfig.tooltip) {
+        await tauri.tray.setTooltip(safeConfig.tooltip);
       }
       return true;
     } else if (env === 'electron') {
       const electron = (window as any).electron || (window as any).ipcRenderer;
       if (electron?.send) {
-        electron.send('update-tray', config);
+        electron.send('update-tray', safeConfig);
         return true;
       }
     }

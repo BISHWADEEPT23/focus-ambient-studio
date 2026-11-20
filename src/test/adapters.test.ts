@@ -8,6 +8,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import { TimerEngine } from '../core/timer/timerEngine';
 import { integrationBus, FlipTimerStateBroadcast } from '../core/contracts/integrationContracts';
 import {
@@ -20,6 +22,13 @@ import {
 import {
   DesktopBridgeAdapter,
 } from '../integrations/contracts/DesktopBridge';
+import {
+  BridgeSecurityValidator,
+} from '../integrations/contracts/BridgeSecurityValidator';
+import {
+  registerServiceWorker,
+  unregisterServiceWorker,
+} from '../registerServiceWorker';
 
 describe('Cross-Platform Integration Adapters & Contracts Test Suite', () => {
   // -------------------------------------------------------------------------
@@ -565,6 +574,123 @@ describe('Cross-Platform Integration Adapters & Contracts Test Suite', () => {
 
       expect(prepOSPayload.targetSystem).toBe('UPSC_PREP_OS');
       expect(prepOSPayload.studyIntensityRating).toBe(4);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 5. BridgeSecurityValidator Security & Bounds Enforcement Tests
+  // -------------------------------------------------------------------------
+  describe('BridgeSecurityValidator Security Enforcements', () => {
+    it('sanitizes malicious HTML/script injections and enforces max length', () => {
+      const maliciousInput = '<script>alert("xss")</script>Focus Session <b>Deep</b>';
+      const sanitized = BridgeSecurityValidator.sanitizeString(maliciousInput);
+
+      expect(sanitized).not.toContain('<script>');
+      expect(sanitized).not.toContain('</script>');
+      expect(sanitized).toBe('scriptalert("xss")/scriptFocus Session bDeep/b');
+
+      // Enforce max length truncation
+      const longInput = 'A'.repeat(2000);
+      const truncated = BridgeSecurityValidator.sanitizeString(longInput, 100);
+      expect(truncated.length).toBe(100);
+    });
+
+    it('enforces safe WakeLock timeout bounds between 1s and 24h', () => {
+      // Under minimum (500ms) -> clamped to 1000ms
+      const underMin = BridgeSecurityValidator.validateWakeLockParams('testTag', 500);
+      expect(underMin.timeoutMs).toBe(1000);
+
+      // Over maximum (48 hours) -> clamped to 24 hours (86400000ms)
+      const overMax = BridgeSecurityValidator.validateWakeLockParams('testTag', 172800000);
+      expect(overMax.timeoutMs).toBe(86400000);
+
+      // Normal valid value within bounds (30 mins = 1800000ms)
+      const valid = BridgeSecurityValidator.validateWakeLockParams('testTag', 1800000);
+      expect(valid.timeoutMs).toBe(1800000);
+      expect(valid.tag).toBe('testTag');
+    });
+
+    it('enforces study intensity ratings strictly within 1..5', () => {
+      expect(BridgeSecurityValidator.validateIntensityRating(1)).toBe(1);
+      expect(BridgeSecurityValidator.validateIntensityRating(5)).toBe(5);
+      expect(BridgeSecurityValidator.validateIntensityRating(0)).toBe(3);
+      expect(BridgeSecurityValidator.validateIntensityRating(10)).toBe(3);
+      expect(BridgeSecurityValidator.validateIntensityRating('high' as any)).toBe(3);
+    });
+
+    it('enforces progress percent bounds strictly between 0.0 and 1.0', () => {
+      expect(BridgeSecurityValidator.validateProgressPercent(0.5)).toBe(0.5);
+      expect(BridgeSecurityValidator.validateProgressPercent(-0.2)).toBe(0.0);
+      expect(BridgeSecurityValidator.validateProgressPercent(1.5)).toBe(1.0);
+      expect(BridgeSecurityValidator.validateProgressPercent(NaN)).toBe(0.0);
+    });
+
+    it('safely parses JSON bridge payloads and rejects oversized inputs', () => {
+      const valid = BridgeSecurityValidator.safeParseBridgePayload('{"command":"START"}');
+      expect(valid.success).toBe(true);
+      expect(valid.data?.command).toBe('START');
+
+      const invalidJson = BridgeSecurityValidator.safeParseBridgePayload('{invalid-json');
+      expect(invalidJson.success).toBe(false);
+      expect(invalidJson.error).toBeDefined();
+
+      // Oversized string > 64KB
+      const hugeString = JSON.stringify({ data: 'X'.repeat(70000) });
+      const oversized = BridgeSecurityValidator.safeParseBridgePayload(hugeString);
+      expect(oversized.success).toBe(false);
+      expect(oversized.error).toContain('Payload exceeds max limit');
+    });
+
+    it('validates authorized origins for native bridge invocation', () => {
+      expect(BridgeSecurityValidator.isAuthorizedOrigin(['*'])).toBe(true);
+      expect(BridgeSecurityValidator.isAuthorizedOrigin(['https://example.com'])).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 6. True Offline-First Installation & PWA Manifest Tests
+  // -------------------------------------------------------------------------
+  describe('True Offline-First Installation & PWA Manifest', () => {
+    it('verifies valid manifest.json exists with standalone PWA properties and icons', () => {
+      const manifestPath = path.resolve(__dirname, '../../public/manifest.json');
+      expect(fs.existsSync(manifestPath)).toBe(true);
+
+      const content = fs.readFileSync(manifestPath, 'utf-8');
+      const manifest = JSON.parse(content);
+
+      expect(manifest.name).toBe('Focus & Ambient Studio');
+      expect(manifest.short_name).toBe('Flocus');
+      expect(manifest.display).toBe('standalone');
+      expect(manifest.start_url).toBe('/');
+      expect(manifest.background_color).toBe('#0a0a0a');
+      expect(manifest.theme_color).toBe('#0a0a0a');
+
+      expect(Array.isArray(manifest.icons)).toBe(true);
+      expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
+      expect(manifest.icons.some((i: any) => i.sizes === '192x192')).toBe(true);
+      expect(manifest.icons.some((i: any) => i.sizes === '512x512')).toBe(true);
+    });
+
+    it('verifies offline-first Service Worker (sw.js) exists with precaching and offline fallback', () => {
+      const swPath = path.resolve(__dirname, '../../public/sw.js');
+      expect(fs.existsSync(swPath)).toBe(true);
+
+      const swContent = fs.readFileSync(swPath, 'utf-8');
+      expect(swContent).toContain('PRECACHE_URLS');
+      expect(swContent).toContain('/index.html');
+      expect(swContent).toContain('/manifest.json');
+      expect(swContent).toContain('caches.open');
+      expect(swContent).toContain('self.skipWaiting()');
+      expect(swContent).toContain('self.clients.claim()');
+    });
+
+    it('handles registerServiceWorker and unregisterServiceWorker without throwing', async () => {
+      // In JSDOM test environment without serviceWorker in navigator
+      const reg = await registerServiceWorker();
+      expect(reg === null || reg !== undefined).toBe(true);
+
+      const unreg = await unregisterServiceWorker();
+      expect(typeof unreg === 'boolean').toBe(true);
     });
   });
 });

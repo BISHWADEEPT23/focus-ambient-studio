@@ -73,7 +73,9 @@ export class StorageEngine {
     if (typeof window === 'undefined' || !window.localStorage) return fallback;
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : fallback;
+      if (!item) return fallback;
+      const parsed = JSON.parse(item);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
     } catch {
       return fallback;
     }

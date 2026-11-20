@@ -59,6 +59,7 @@ export const AudioMixerModal: React.FC<AudioMixerModalProps> = ({
         <div className="py-4 border-b border-neutral-800 flex items-center justify-between gap-4">
           <button
             onClick={onToggleMute}
+            aria-label="Toggle master mute"
             className={`p-2 rounded-xl border transition-all ${
               isMuted
                 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
@@ -111,6 +112,7 @@ export const AudioMixerModal: React.FC<AudioMixerModalProps> = ({
                   <div className="flex items-center gap-2.5">
                     <button
                       onClick={() => onToggleChannel(ch.id)}
+                      aria-label={`Toggle ${ch.name}`}
                       className={`p-1.5 rounded-lg border transition-all ${
                         ch.active
                           ? 'bg-primary-600 border-primary-500 text-white shadow-md shadow-primary-600/30'

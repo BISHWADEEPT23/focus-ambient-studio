@@ -181,10 +181,30 @@ export class AnalyticsEngine {
 
   public importBackup(jsonString: string): boolean {
     try {
+      if (typeof jsonString !== 'string' || !jsonString.trim()) {
+        return false;
+      }
       const parsed = JSON.parse(jsonString);
-      if (Array.isArray(parsed.sessions) && parsed.streakData) {
-        this.sessions = parsed.sessions;
-        this.streakData = parsed.streakData;
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        Array.isArray(parsed.sessions) &&
+        parsed.streakData &&
+        typeof parsed.streakData === 'object' &&
+        typeof parsed.streakData.currentStreak === 'number'
+      ) {
+        // Defensive validation and sanitization
+        const validSessions = parsed.sessions.filter(
+          (s: any) => s && typeof s === 'object' && typeof s.durationSeconds === 'number'
+        );
+        this.sessions = validSessions;
+        this.streakData = {
+          currentStreak: Math.max(0, parsed.streakData.currentStreak || 0),
+          longestStreak: Math.max(0, parsed.streakData.longestStreak || 0),
+          lastActiveDate: typeof parsed.streakData.lastActiveDate === 'string' ? parsed.streakData.lastActiveDate : '',
+          nextCheckTimestamp: typeof parsed.streakData.nextCheckTimestamp === 'number' ? parsed.streakData.nextCheckTimestamp : Date.now(),
+          history: (parsed.streakData.history && typeof parsed.streakData.history === 'object' && !Array.isArray(parsed.streakData.history)) ? { ...parsed.streakData.history } : {},
+        };
         this.notify();
         return true;
       }
