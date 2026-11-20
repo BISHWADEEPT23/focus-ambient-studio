@@ -1,0 +1,42 @@
+<!doctype html>
+<html manifest="cache.manifest">
+
+<head>
+    <title>FlipClock</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="/images/logos/FlipClock_128_full.png" sizes="128x128">
+    <link rel="shortcut icon" type="image/x-icon" href="/images/logos/FlipClock_64_full.png" sizes="64x64">
+    <link rel="shortcut icon" type="image/x-icon" href="/images/logos/FlipClock_32_full.png" sizes="32x32">
+
+    <script type="text/javascript" src="package.js"></script>
+    <!--<script type="module" src="init.js"></script>-->
+
+    <link rel="stylesheet" type="text/css" href="css/font/font.css">
+    <link rel="stylesheet" type="text/css" href="css/app.css">
+</head>
+
+<body id="body">
+    <div id="wrapper">
+        <div id="toolbarContainer" class="bar_container"></div>
+        <div id="container"></div>
+        <div id="toolbar" class="bar">
+            <a href="#/" class="clock button icon icon_clock"><span class="label">Clock</span></a>
+            <a dialog="countdown" class="countdown button icon icon_countdown"><span class="label">Countdown</span></a>
+
+            <a dialog="about" class="button button_right icon icon_star"><span class="label">About</span></a>
+            <a dialog="options" class="button button_right icon icon_options"><span class="label">Options</span></a>
+            <a action="fullscreen" class="button button_right icon icon_fullscreen"><span
+                    class="label">Fullscreen</span></a>
+        </div>
+    </div>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"b3a5ebce7c334764994d850a7bb79f63","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+
+</html>

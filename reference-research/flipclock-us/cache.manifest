@@ -1,0 +1,28 @@
+CACHE MANIFEST
+# v39
+
+CACHE:
+/index.html
+/favicon.ico
+/templates/about.twig
+/templates/countdown.twig
+/templates/dialog.twig
+/templates/options.twig
+/css/font/font.css
+/css/app.css
+/init.js
+/package.js
+/vendor/nobleModules.js
+/apple-touch-icon-precomposed.png
+/images/logos/FlipClock_32_full.png
+/images/logos/FlipClock_64_full.png
+/images/logos/FlipClock_128_full.png
+/images/icons/00-up.png
+/images/icons/00-down.png
+/images/icons/11-clock.png
+/images/icons/19-gear.png
+/images/icons/28-star.png
+/images/icons/78-stopwatch.png
+
+NETWORK:
+*
